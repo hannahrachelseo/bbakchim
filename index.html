@@ -52,7 +52,7 @@ nav{position:sticky;top:0;z-index:5;max-width:1100px;margin:-28px auto 0;padding
 main{max-width:1100px;margin:0 auto;padding:22px max(4vw,16px) 70px}
 .note{margin:0 0 14px;padding:10px 14px;border-radius:14px;background:var(--pinkBg);color:var(--pink2);font-size:14px;font-weight:500}
 
-.banners{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.banners{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px}
 .ban{position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:20px;min-height:200px;padding:22px;border-radius:30px;border:0;text-align:left;box-shadow:var(--sh);transition:transform .18s;overflow:hidden}
 .ban:hover{transform:translateY(-4px) rotate(-.6deg)}
 .ban::after{content:"";position:absolute;right:-30px;bottom:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.22)}
@@ -65,6 +65,15 @@ main{max-width:1100px;margin:0 auto;padding:22px max(4vw,16px) 70px}
 .b1{background:var(--pink);color:#fff}.b1 .ic{background:rgba(255,255,255,.3)}
 .b2{background:var(--mint);color:var(--mintInk)}
 .b3{background:var(--butter);color:var(--butterInk)}
+.b4{background:var(--panel);color:var(--ink);border:3px solid var(--mint)}.b4 .ic{background:var(--mintBg);color:var(--mintInk)}
+.pill.mint{background:var(--mintBg)}.pill.yel{background:light-dark(#fff3c4,#4a3e12);color:light-dark(var(--butterInk),#ffe48f)}
+.cal7{grid-template-columns:repeat(7,minmax(0,1fr))!important}
+.who.p{background:var(--butter);color:var(--butterInk)}.who.over{background:var(--pink2);color:#fff}
+.manual{border:2px dashed var(--pink);border-radius:20px;padding:12px 14px;margin-bottom:14px;background:var(--pinkBg)}
+.manual.on{border-style:solid}
+.manual summary{font-family:"Jua";font-size:18px;cursor:pointer;min-height:40px;display:flex;align-items:center;color:var(--pink2)}
+.switch{display:flex;align-items:center;gap:10px;font-weight:700;min-height:44px}.switch input{width:24px;height:24px;accent-color:var(--pink)}
+.okbtn{min-height:40px;padding:0 14px;border-radius:20px;border:0;background:var(--mint);color:var(--mintInk);font-weight:700;white-space:nowrap}
 
 .panel{background:var(--panel);border-radius:26px;padding:20px;margin-top:16px;box-shadow:var(--sh)}
 .panel h3{font-size:22px;margin-bottom:12px}
@@ -120,7 +129,7 @@ tr.late td{background:var(--pinkBg)}
 .cal .d.out{opacity:.4}
 .cal .d.now{border-color:var(--pink)}
 .cal .n{font-size:13px;font-weight:700;color:var(--mute);margin-bottom:4px}
-.cal .who{display:block;font-size:13px;font-weight:700;line-height:1.3;padding:3px 8px;margin-bottom:3px;border-radius:10px;background:var(--mint);color:var(--mintInk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal .who{display:block;font-size:13px;letter-spacing:-.3px;font-weight:700;line-height:1.3;padding:3px 8px;margin-bottom:3px;border-radius:10px;background:var(--mint);color:var(--mintInk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mnav{display:flex;align-items:center;gap:6px}
 .mnav button{min-width:44px;min-height:44px;border-radius:22px;border:2px solid var(--line);background:var(--panel);font-weight:700}
 .mnav strong{font-family:"Jua";font-weight:400;font-size:22px;min-width:116px;text-align:center}
@@ -176,7 +185,8 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 <nav><div class="tabs">
   <button data-go="home">홈</button>
   <button data-go="swear-check">욕설 체크</button>
-  <button data-go="swear-list">수업 중 욕설</button>
+  <button data-go="pickup">받으러 와요</button>
+  <button data-go="submit">제출해요</button>
   <button data-go="late">지각 청소</button>
   <button data-go="setup">명렬표</button>
 </div></nav>
@@ -190,12 +200,17 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
         <div><h2>욕설 체크</h2><div class="sub">반 고르고 이름 누르면 끝</div></div>
         <div class="big" id="bn1">0<small>명 오늘 체크</small></div>
       </button>
-      <button class="ban b2" data-go="swear-list">
-        <span class="ic"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h3"/></svg></span>
-        <div><h2>수업 중 욕설</h2><div class="sub">필사 제출 체크, 미제출은 다다음날 08:20</div></div>
-        <div class="big" id="bn2">0<small>명 미제출</small></div>
+      <button class="ban b3" data-go="pickup">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M5 9h14l-1 11H6z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/></svg></span>
+        <div><h2>받으러 와요</h2><div class="sub">명심보감을 아직 안 받아간 애들</div></div>
+        <div class="big" id="bnP">0<small>명</small></div>
       </button>
-      <button class="ban b3" data-go="late">
+      <button class="ban b2" data-go="submit">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h3"/></svg></span>
+        <div><h2>제출해요</h2><div class="sub">받아갔고 써서 내야 하는 애들</div></div>
+        <div class="big" id="bnS">0<small>명</small></div>
+      </button>
+      <button class="ban b4" data-go="late">
         <span class="ic"><svg viewBox="0 0 24 24"><path d="M15 3l-4 9"/><path d="M6 12h9l2 9H4z"/><path d="M8.5 16v5M12.5 16v5"/></svg></span>
         <div><h2>지각 청소</h2><div class="sub">누르면 다음 주 월~금 자동 배정</div></div>
         <div class="big" id="bn3">0<small>명 이번 주 당번</small></div>
@@ -203,7 +218,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
     </div>
     <div class="today">
       <div class="panel"><h3>오늘 청소 당번</h3><div id="tdClean"></div></div>
-      <div class="panel"><h3>오늘 잡아야 할 필사 미제출</h3><div id="tdAlert"></div></div>
+      <div class="panel"><h3>마감 지난 명심보감</h3><div id="tdAlert"></div></div>
     </div>
   </section>
 
@@ -213,17 +228,39 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
       <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><input type="search" id="swSearch" placeholder="학생 이름 검색 (모든 반에서 찾아요)" aria-label="학생 이름 검색"></div>
       <label for="swDate">체크 날짜</label><input type="date" id="swDate">
     </div>
+    <details class="manual" id="manualBox">
+      <summary>✏️ 마감일 직접 정해서 등록하기 (앱 만들기 전에 시킨 애들)</summary>
+      <label class="switch"><input type="checkbox" id="manOn">이 설정으로 체크하기</label>
+      <div class="bar" style="margin:4px 0 0">
+        <label for="manDue">마감일</label><input type="date" id="manDue">
+        <label class="switch"><input type="checkbox" id="manRecv" checked>이미 명심보감 받아감</label>
+      </div>
+      <p class="hint" style="margin:6px 0 0">켜 두면 학생을 누를 때 위 마감일로 등록돼요. 다 하면 꺼 주세요.</p>
+    </details>
     <div class="chips" id="clsChips"></div>
     <div class="roster" id="roster"></div>
   </section>
 
-  <section data-view="swear-list" hidden>
-    <div class="h"><h2>수업 중 욕설</h2><p>필사를 내면 제출 칸을 체크하세요</p></div>
+  <section data-view="pickup" hidden>
+    <div class="h"><h2>받으러 와요</h2><p>명심보감을 받아가면 “받아감”을 눌러 주세요</p></div>
+    <div class="bar"><select id="pCls" aria-label="반 필터"></select></div>
+    <div class="panel" style="margin-top:0"><table class="stack" id="pTable"></table></div>
+  </section>
+
+  <section data-view="submit" hidden>
+    <div class="h"><h2>제출해요</h2><p>써 오면 제출 칸을 체크하세요 · 마감일 08:20 캘린더 알림</p></div>
     <div class="bar">
-      <div class="chips" id="fChips" style="margin:0"></div>
-      <select id="fCls" aria-label="반 필터"></select>
+      <div class="chips" id="sChips" style="margin:0"></div>
+      <select id="sCls" aria-label="반 필터"></select>
     </div>
-    <div class="panel" style="margin-top:0"><table class="stack" id="swTable"></table></div>
+    <div class="panel" style="margin-top:0"><table class="stack" id="sTable"></table></div>
+    <div class="panel">
+      <div class="h" style="margin-bottom:12px"><h3 style="margin:0">명심보감 마감 캘린더</h3>
+        <div class="mnav"><button data-smon="-1" aria-label="이전 달">‹</button><strong id="sMonLabel"></strong><button data-smon="1" aria-label="다음 달">›</button><button data-smon="0" style="padding:0 12px">오늘</button></div>
+      </div>
+      <div class="cal cal7" id="sCal"></div>
+      <p class="hint" style="margin-top:10px"><span class="pill yel">노랑</span>아직 안 받아감 <span class="pill">민트</span>받아갔고 제출 전 <span class="pill red">빨강</span>마감 지남</p>
+    </div>
   </section>
 
   <section data-view="late" hidden>
@@ -246,12 +283,13 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
     <div class="h"><h2>명렬표</h2><p id="setupInfo"></p></div>
     <div class="panel" style="margin-top:0" id="connPanel">
       <h3>서버 연결</h3>
-      <p class="hint" id="connState">구글 시트 서버 주소와 앱 비밀번호를 넣어 주세요.</p>
+      <p class="hint" id="connState">앱 비밀번호만 넣으면 돼요.</p>
       <div class="bar" style="flex-direction:column;align-items:stretch">
-        <label for="cfgUrl">웹 앱 URL (Apps Script 배포 주소)</label>
-        <input id="cfgUrl" class="field" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
-        <label for="cfgKey">앱 비밀번호 (시트 "설정" 탭)</label>
-        <input id="cfgKey" class="field" type="text" placeholder="비밀번호" autocomplete="off">
+        <label for="cfgKey">앱 비밀번호 (구글 시트 “한나T 빡침모드 DB”의 설정 탭)</label>
+        <input id="cfgKey" class="field" type="text" placeholder="비밀번호 10자리" autocomplete="off" autocapitalize="off">
+        <details><summary style="font-size:15px;min-height:36px">서버 주소 바꾸기 (보통은 건드리지 않아요)</summary>
+          <input id="cfgUrl" class="field" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+        </details>
       </div>
       <button class="btn" id="saveCfg">연결하기</button>
     </div>
@@ -284,7 +322,8 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 
 <script>
 {
-const VERSION='1.0.0';
+const VERSION='1.1.0';
+const DEFAULT_URL='https://script.google.com/macros/s/AKfycbwxo7jFPI-XzC0XZ8yLXmGqrzFiL8LPRePL-pGkUami6kTY0JYydh21Rb4xGOyC9doX/exec';
 const DAYS=['일','월','화','수','목','금','토'];
 const DEFAULT_CLASSES=['1','2','3','4','5','9','10','11','12'];
 const pad=n=>String(n).padStart(2,'0');
@@ -303,10 +342,10 @@ const MAX=4;
 /* ---------- 저장 (폰) ---------- */
 const LS_CFG='bbak-config',LS_CACHE='bbak-cache';
 const ls={get(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-let cfg=ls.get(LS_CFG)||{url:'',key:''};
+let cfg=ls.get(LS_CFG)||{url:DEFAULT_URL,key:''};if(!cfg.url)cfg.url=DEFAULT_URL;
 const S=Object.assign({homeroom:'',rosters:{},swear:[],late:[]},ls.get(LS_CACHE)||{});
 const t0=today();
-const ui={view:'home',cls:'',swDate:t0,lateDate:t0,filter:'open',fcls:'all',month:t0.slice(0,8)+'01',setCls:'',swQ:'',lateQ:''};
+const ui={view:'home',cls:'',swDate:t0,lateDate:t0,filter:'open',fcls:'all',month:t0.slice(0,8)+'01',setCls:'',swQ:'',lateQ:'',pcls:'all',scls:'all',sfilter:'open',smonth:t0.slice(0,8)+'01',manOn:false,manDue:'',manRecv:true};
 let pending=null,inflight=0,lastSync=0;
 const busy=new Set();
 
@@ -325,7 +364,7 @@ async function post(action,payload){
   return j;
 }
 function errMsg(e){
-  if(e.code==='nocfg')return '먼저 명렬표 탭에서 서버를 연결해 주세요.';
+  if(e.code==='nocfg')return '먼저 명렬표 탭에서 앱 비밀번호를 넣어 주세요.';
   if(e.code==='net')return '인터넷 연결을 확인해 주세요. 저장되지 않았어요.';
   if(e.code==='bad')return '서버 주소가 맞는지 확인해 주세요.';
   return e.msg||'저장하지 못했어요.';
@@ -354,7 +393,7 @@ function act(action,payload,{optimistic,done,bkey}={}){
   return chain;
 }
 async function refresh(quiet){
-  if(!cfg.url||!cfg.key){note('처음이라면 명렬표 탭에서 서버를 연결해 주세요.');syncDot('off');return false}
+  if(!cfg.url||!cfg.key){note('처음이라면 명렬표 탭에서 앱 비밀번호를 넣어 주세요.');syncDot('off');return false}
   if(inflight)return true;
   try{syncDot('busy');const j=await post('all');if(!inflight)applyAll(j.all);note('');syncDot('');return true}
   catch(e){syncDot('off');if(!quiet)note(e.code==='net'?'인터넷이 연결되지 않아 마지막으로 받은 기록을 보여주고 있어요.':errMsg(e));return false}
@@ -369,20 +408,23 @@ const nameOf=r=>r.name||`${r.no}번`;
 const match=(r,q)=>(r.name||'').replace(/\s/g,'').includes(q.replace(/\s/g,''))||String(r.no)===q.trim();
 
 /* ---------- 홈 ---------- */
+const isPick=r=>!r.submitted&&!r.received;
+const isSub=r=>!r.submitted&&r.received;
 function renderHome(){
   const td=today();
   const todayChecks=S.swear.filter(r=>r.date===td).length;
-  const open=S.swear.filter(r=>!r.submitted);
-  const due=open.filter(r=>r.alertDate<=td).sort((a,b)=>a.alertDate.localeCompare(b.alertDate));
+  const pick=S.swear.filter(isPick),sub=S.swear.filter(isSub);
+  const due=S.swear.filter(r=>!r.submitted&&r.alertDate<=td).sort((a,b)=>a.alertDate.localeCompare(b.alertDate));
   const thisWeek=S.late.filter(r=>r.weekStart===monOf(td));
   const nextWeek=S.late.filter(r=>r.weekStart===nextMon(td));
   $('bn1').innerHTML=`${todayChecks}<small>명 오늘 체크</small>`;
-  $('bn2').innerHTML=`${open.length}<small>명 미제출${due.length?` · 기한 지남 ${due.length}`:''}</small>`;
+  $('bnP').innerHTML=`${pick.length}<small>명 아직 안 받아감</small>`;
+  $('bnS').innerHTML=`${sub.length}<small>명 제출 전${due.length?` · 마감 지남 ${due.length}`:''}</small>`;
   $('bn3').innerHTML=`${thisWeek.length}<small>명 이번 주 · 다음 주 ${nextWeek.length}/${MAX}</small>`;
   const wd=parse(td).getDay();
   $('tdClean').innerHTML=(wd===0||wd===6)?'<p class="empty">주말이에요. 푹 쉬어요!</p>':
     thisWeek.length?thisWeek.map(r=>`<span class="pill">${esc(r.no)}번 ${esc(r.name)}</span>`).join(''):'<p class="empty">이번 주 청소 당번이 없어요.</p>';
-  $('tdAlert').innerHTML=due.length?due.map(r=>`<span class="pill red">${esc(r.cls)}반 ${esc(r.no)}번 ${esc(r.name)} · ${esc(short(r.date))} 체크</span>`).join('')+'<p class="hint" style="margin-top:6px"><a href="#swear-list">수업 중 욕설에서 제출 체크하기</a></p>':'<p class="empty">기한 지난 미제출 학생이 없어요.</p>';
+  $('tdAlert').innerHTML=due.length?due.map(r=>`<span class="pill red">${esc(r.cls)}반 ${esc(r.no)}번 ${esc(r.name)} · ${esc(short(r.alertDate))} 마감${r.received?'':' · 아직 안 받아감'}</span>`).join('')+'<p class="hint" style="margin-top:6px"><a href="#submit">제출해요에서 체크하기</a></p>':'<p class="empty">마감 지난 학생이 없어요.</p>';
 }
 
 /* ---------- 욕설 체크 ---------- */
@@ -416,29 +458,63 @@ function toggleSwear(cls,no){
     return;
   }
   const date=ui.swDate;
-  act('addSwear',{cls,no:Number(r.no),name:nameOf(r),date},{bkey,
-    optimistic:()=>{S.swear.push({id:'tmp'+Date.now(),cls,no:Number(r.no),name:nameOf(r),date,alertDate:alertOf(date),submitted:false,submittedDate:'',calEventId:''})},
-    done:j=>toast(`${cls}반 ${nameOf(r)} 체크 · 미제출이면 ${short(j.rec.alertDate)} 08:20 알림`)});
+  const man=ui.manOn&&/^\d{4}-\d{2}-\d{2}$/.test(ui.manDue);
+  if(ui.manOn&&!man){toast('직접 등록할 마감일을 먼저 골라 주세요.');return}
+  const due=man?ui.manDue:alertOf(date),recv=man?ui.manRecv:false;
+  act('addSwear',{cls,no:Number(r.no),name:nameOf(r),date,dueDate:man?due:'',received:recv},{bkey,
+    optimistic:()=>{S.swear.push({id:'tmp'+Date.now(),cls,no:Number(r.no),name:nameOf(r),date,alertDate:due,submitted:false,submittedDate:'',calEventId:'',received:recv,receivedDate:''})},
+    done:j=>toast(`${cls}반 ${nameOf(r)} ${man?'직접 등록':'체크'} · 마감 ${short(j.rec.alertDate)} 08:20 알림${recv?'':' · 받으러 와요에 올라갔어요'}`)});
 }
 
-/* ---------- 수업 중 욕설 ---------- */
-function renderList(){
-  const F=[['open','미제출'],['done','제출 완료'],['all','전체']];
-  $('fChips').innerHTML=F.map(([k,l])=>`<button class="chip" data-f="${k}" aria-pressed="${ui.filter===k}">${l}</button>`).join('');
-  $('fCls').innerHTML=`<option value="all">모든 반</option>`+classes().map(c=>`<option value="${esc(c)}"${ui.fcls===c?' selected':''}>${esc(c)}반</option>`).join('');
+/* ---------- 받으러 와요 / 제출해요 ---------- */
+function clsOptions(sel){return `<option value="all">모든 반</option>`+classes().map(c=>`<option value="${esc(c)}"${sel===c?' selected':''}>${esc(c)}반</option>`).join('')}
+function dueTag(r){
   const td=today();
-  let rows=S.swear.filter(r=>(ui.filter==='all'||(ui.filter==='open'?!r.submitted:r.submitted))&&(ui.fcls==='all'||r.cls===ui.fcls));
-  rows.sort((a,b)=>(a.submitted-b.submitted)||a.alertDate.localeCompare(b.alertDate)||b.date.localeCompare(a.date));
-  if(!rows.length){$('swTable').innerHTML=`<tr><td class="empty">${ui.filter==='open'?'미제출 학생이 없어요.':'기록이 없어요.'}</td></tr>`;return}
-  $('swTable').innerHTML=`<thead><tr><th>체크일</th><th>반</th><th>번호</th><th>이름</th><th>상태</th><th>제출</th><th></th></tr></thead><tbody>`+
-  rows.map(r=>{
-    const over=!r.submitted&&r.alertDate<=td;
-    const st=r.submitted?`<span class="tag ok">제출 ${esc(short(r.submittedDate||r.date))}</span>`:over?`<span class="tag red">기한 지남 · ${esc(short(r.alertDate))} 알림</span>`:`<span class="tag mute">알림 ${esc(short(r.alertDate))} 08:20</span>`;
-    const tmp=String(r.id).startsWith('tmp');
-    return `<tr class="${over?'late':''}"><td>${esc(short(r.date))}</td><td>${esc(r.cls)}반</td><td>${esc(r.no)}</td><td><b>${esc(r.name)}</b></td><td>${st}</td>
+  if(r.submitted)return `<span class="tag ok">제출 ${esc(short(r.submittedDate||r.date))}</span>`;
+  if(r.alertDate<td)return `<span class="tag red">마감 ${esc(short(r.alertDate))} 지남</span>`;
+  if(r.alertDate===td)return `<span class="tag red">오늘 마감</span>`;
+  return `<span class="tag mute">마감 ${esc(short(r.alertDate))}</span>`;
+}
+const sortDue=(a,b)=>a.alertDate.localeCompare(b.alertDate)||a.cls-b.cls||a.no-b.no;
+function renderPickup(){
+  $('pCls').innerHTML=clsOptions(ui.pcls);
+  const rows=S.swear.filter(r=>isPick(r)&&(ui.pcls==='all'||r.cls===ui.pcls)).sort(sortDue);
+  if(!rows.length){$('pTable').innerHTML='<tr><td class="empty">받으러 와야 하는 학생이 없어요.</td></tr>';return}
+  const td=today();
+  $('pTable').innerHTML=`<thead><tr><th>체크일</th><th>반</th><th>번호</th><th>이름</th><th>마감</th><th>받아감</th><th></th></tr></thead><tbody>`+
+  rows.map(r=>{const tmp=String(r.id).startsWith('tmp');return `<tr class="${r.alertDate<=td?'late':''}"><td>${esc(short(r.date))}</td><td>${esc(r.cls)}반</td><td>${esc(r.no)}</td><td><b>${esc(r.name)}</b></td><td>${dueTag(r)}</td>
+    <td>${tmp?'<span class="tag mute">저장 중</span>':`<button class="okbtn" data-recv="${esc(r.id)}">받아감 ✓</button>`}</td>
+    <td>${tmp?'':`<button class="del" data-del="swear" data-id="${esc(r.id)}">삭제</button>`}</td></tr>`}).join('')+'</tbody>';
+}
+function renderSubmit(){
+  const F=[['open','제출 전'],['done','제출 완료'],['all','전체']];
+  $('sChips').innerHTML=F.map(([k,l])=>`<button class="chip" data-sf="${k}" aria-pressed="${ui.sfilter===k}">${l}</button>`).join('');
+  $('sCls').innerHTML=clsOptions(ui.scls);
+  const td=today();
+  let rows=S.swear.filter(r=>(ui.sfilter==='open'?isSub(r):ui.sfilter==='done'?r.submitted:(r.received||r.submitted))&&(ui.scls==='all'||r.cls===ui.scls));
+  rows.sort((a,b)=>(a.submitted-b.submitted)||(a.submitted?b.submittedDate.localeCompare(a.submittedDate):sortDue(a,b)));
+  $('sTable').innerHTML=!rows.length?`<tr><td class="empty">${ui.sfilter==='open'?'제출해야 하는 학생이 없어요.':'기록이 없어요.'}</td></tr>`:
+  `<thead><tr><th>체크일</th><th>반</th><th>번호</th><th>이름</th><th>마감</th><th>제출</th><th></th></tr></thead><tbody>`+
+  rows.map(r=>{const over=!r.submitted&&r.alertDate<=td;const tmp=String(r.id).startsWith('tmp');
+    return `<tr class="${over?'late':''}"><td>${esc(short(r.date))}</td><td>${esc(r.cls)}반</td><td>${esc(r.no)}</td><td><b>${esc(r.name)}</b></td><td>${dueTag(r)}</td>
     <td><label class="chk"><input type="checkbox" data-sub="${esc(r.id)}"${r.submitted?' checked':''}${tmp?' disabled':''}>제출</label></td>
-    <td>${tmp?'':`<button class="del" data-del="swear" data-id="${esc(r.id)}">삭제</button>`}</td></tr>`;
-  }).join('')+'</tbody>';
+    <td>${tmp?'':`<button class="del" data-del="swear" data-id="${esc(r.id)}">삭제</button>`}</td></tr>`}).join('')+'</tbody>';
+  renderSwCal();
+}
+function renderSwCal(){
+  const m=parse(ui.smonth);
+  $('sMonLabel').textContent=`${m.getFullYear()}년 ${m.getMonth()+1}월`;
+  const last=ymd(new Date(m.getFullYear(),m.getMonth()+1,0));
+  const td=today();
+  let html=['월','화','수','목','금','토','일'].map(d=>`<div class="hd">${d}</div>`).join('');
+  for(let ws=monOf(ui.smonth);ws<=last;ws=addDays(ws,7)){
+    for(let i=0;i<7;i++){
+      const ds=addDays(ws,i);const d=parse(ds);
+      const who=S.swear.filter(r=>!r.submitted&&r.alertDate===ds).sort((a,b)=>a.cls-b.cls||a.no-b.no);
+      html+=`<div class="d${d.getMonth()!==m.getMonth()?' out':''}${ds===td?' now':''}"><div class="n">${d.getDate()}</div>${who.map(r=>`<span class="who${ds<td?' over':r.received?'':' p'}" title="${esc(r.cls)}반 ${esc(r.no)}번 ${esc(r.name)}">${esc(r.name)}</span>`).join('')}</div>`;
+    }
+  }
+  $('sCal').innerHTML=html;
 }
 
 /* ---------- 지각 청소 ---------- */
@@ -500,7 +576,7 @@ function toggleLate(no){
 function renderSetup(){
   const loaded=classes().filter(hasRoster);
   $('setupInfo').textContent=loaded.length?`지금 ${loaded.length}개 반 · ${loaded.reduce((s,c)=>s+S.rosters[c].length,0)}명 저장됨`:'아직 명렬표가 없어요';
-  $('connState').textContent=cfg.url&&cfg.key?(lastSync?`연결됨 · 마지막 동기화 ${new Date(lastSync).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}`:'연결 정보가 저장돼 있어요.'):'구글 시트 서버 주소와 앱 비밀번호를 넣어 주세요.';
+  $('connState').textContent=cfg.url&&cfg.key?(lastSync?`연결됨 · 마지막 동기화 ${new Date(lastSync).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}`:'연결 정보가 저장돼 있어요.'):'앱 비밀번호만 넣으면 돼요.';
   $('homeroom').innerHTML='<option value="">선택하세요</option>'+classes().map(c=>`<option value="${esc(c)}"${S.homeroom===c?' selected':''}>${esc(c)}반</option>`).join('');
   if(!classes().includes(ui.setCls))ui.setCls=classes()[0];
   $('setChips').innerHTML=classes().map(c=>`<button class="chip" data-set="${esc(c)}" aria-pressed="${ui.setCls===c}">${esc(c)}반</button>`).join('');
@@ -595,11 +671,12 @@ function render(){
   document.querySelectorAll('.tabs [data-go]').forEach(b=>b.setAttribute('aria-current',b.dataset.go===ui.view?'page':'false'));
   renderHome();
   if(ui.view==='swear-check')renderCheck();
-  if(ui.view==='swear-list')renderList();
+  if(ui.view==='pickup')renderPickup();
+  if(ui.view==='submit')renderSubmit();
   if(ui.view==='late')renderLate();
   if(ui.view==='setup')renderSetup();
 }
-const VIEWS=['home','swear-check','swear-list','late','setup'];
+const VIEWS=['home','swear-check','pickup','submit','late','setup'];
 function route(){const h=location.hash.slice(1);const prev=ui.view;ui.view=VIEWS.includes(h)?h:'home';render();if(ui.view==='setup'&&prev!=='setup'){fillRosterText();$('cfgUrl').value=cfg.url||'';$('cfgKey').value=cfg.key||''}window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);
 
@@ -608,7 +685,10 @@ document.addEventListener('click',async e=>{
   if(b.dataset.go){location.hash=b.dataset.go;return}
   if(b.dataset.cls){ui.cls=b.dataset.cls;ui.swQ='';$('swSearch').value='';renderCheck();return}
   if(b.dataset.sw){toggleSwear(b.dataset.c,b.dataset.sw);return}
-  if(b.dataset.f){ui.filter=b.dataset.f;renderList();return}
+  if(b.dataset.sf){ui.sfilter=b.dataset.sf;renderSubmit();return}
+  if(b.dataset.recv){const r=S.swear.find(x=>x.id===b.dataset.recv);if(!r)return;
+    act('setReceived',{id:r.id,received:true},{optimistic:()=>{r.received=true;r.receivedDate=today()},done:()=>toast(`${r.name} 받아감 → 제출해요로 옮겼어요`)});return}
+  if(b.dataset.smon){const n=Number(b.dataset.smon);if(!n)ui.smonth=today().slice(0,8)+'01';else{const m=parse(ui.smonth);m.setMonth(m.getMonth()+n);ui.smonth=ymd(m)}renderSwCal();return}
   if(b.dataset.late){toggleLate(b.dataset.late);return}
   if(b.dataset.gcal){b.disabled=true;b.textContent='넣는 중…';act('addLateCal',{id:b.dataset.gcal},{done:()=>toast('구글 캘린더에 넣었어요')});return}
   if(b.dataset.mon){const n=Number(b.dataset.mon);if(!n)ui.month=today().slice(0,8)+'01';else{const m=parse(ui.month);m.setMonth(m.getMonth()+n);ui.month=ymd(m)}renderCal();return}
@@ -627,7 +707,7 @@ document.addEventListener('click',async e=>{
     return;
   }
   if(b.id==='saveCfg'){
-    const url=$('cfgUrl').value.trim(),key=$('cfgKey').value.trim();
+    const url=$('cfgUrl').value.trim()||DEFAULT_URL,key=$('cfgKey').value.trim();
     if(!/^https:\/\/script\.google(usercontent)?\.com\//.test(url)){toast('웹 앱 URL은 https://script.google.com/… 으로 시작해요.');return}
     if(!key){toast('앱 비밀번호를 넣어 주세요.');return}
     cfg={url,key};ls.set(LS_CFG,cfg);b.disabled=true;b.textContent='연결 중…';
@@ -643,8 +723,12 @@ document.addEventListener('change',e=>{
   const t=e.target;
   if(t.id==='xlsFile'){if(t.files&&t.files.length)readFiles(t.files);return}
   if(t.dataset.sub){const r=S.swear.find(x=>x.id===t.dataset.sub);if(!r)return;const on=t.checked;
-    act('setSubmitted',{id:r.id,submitted:on},{optimistic:()=>{r.submitted=on;r.submittedDate=on?today():''},done:()=>toast(on?`${r.name} 제출 완료 · 08:20 알림 지웠어요`:`${r.name} 제출 취소`)});return}
-  if(t.id==='fCls'){ui.fcls=t.value;renderList();return}
+    act('setSubmitted',{id:r.id,submitted:on},{optimistic:()=>{r.submitted=on;r.submittedDate=on?today():''},done:()=>toast(on?`${r.name} 제출 완료 · 마감 알림 지웠어요`:`${r.name} 제출 취소`)});return}
+  if(t.id==='pCls'){ui.pcls=t.value;renderPickup();return}
+  if(t.id==='sCls'){ui.scls=t.value;renderSubmit();return}
+  if(t.id==='manOn'){ui.manOn=t.checked;$('manualBox').classList.toggle('on',t.checked);if(t.checked&&!ui.manDue)toast('마감일을 골라 주세요.');return}
+  if(t.id==='manDue'){ui.manDue=t.value;return}
+  if(t.id==='manRecv'){ui.manRecv=t.checked;return}
   if(t.id==='swDate'){ui.swDate=t.value||today();renderCheck();return}
   if(t.id==='lateDate'){ui.lateDate=t.value||today();renderLate();return}
   if(t.id==='homeroom'){const v=t.value;act('setHomeroom',{homeroom:v},{optimistic:()=>{S.homeroom=v},done:()=>toast(v?`우리 반: ${v}반`:'우리 반 선택 해제')});return}
@@ -657,6 +741,7 @@ drop.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files.length)
 /* ---------- 시작 ---------- */
 $('swDate').value=ui.swDate;$('lateDate').value=ui.lateDate;
 $('ver').textContent=`버전 ${VERSION} · 인터넷에 연결되면 새 버전이 자동으로 들어와요`;
+if(!cfg.key&&!location.hash)location.hash='setup';
 route();
 refresh();
 let dayNow=t0;

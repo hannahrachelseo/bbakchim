@@ -15,7 +15,7 @@ const SHEET_ID = '14lqKtwJApdlzrnhbLDOE9L4dLGj1s_T-J79G5lWnRNs';
 function ss_() { return SpreadsheetApp.openById(SHEET_ID); }
 const MAX_PER_WEEK = 4;
 const ALERT_TIME = '08:20';
-const SW_HEAD = ['id', '반', '번호', '이름', '체크일', '알림일', '제출', '제출일', '알림일정ID', '만든시각'];
+const SW_HEAD = ['id', '반', '번호', '이름', '체크일', '마감일', '제출', '제출일', '알림일정ID', '만든시각', '받아감', '받아간날'];
 const LT_HEAD = ['id', '반', '번호', '이름', '지각일', '청소시작(월)', '캘린더ID', '만든시각'];
 const RO_HEAD = ['반', '번호', '이름'];
 
@@ -24,7 +24,9 @@ function setup() {
   const ss = ss_();
   ss.setSpreadsheetTimeZone(TZ);
   ensureSheet_('명렬표', RO_HEAD);
-  ensureSheet_('욕설', SW_HEAD).getRange('A:J').setNumberFormat('@');
+  const sw = ensureSheet_('욕설', SW_HEAD);
+  sw.getRange('A:L').setNumberFormat('@');
+  sw.getRange(1, 1, 1, SW_HEAD.length).setValues([SW_HEAD]);
   ensureSheet_('지각', LT_HEAD).getRange('A:H').setNumberFormat('@');
   ensureSheet_('설정', ['항목', '값']);
   let key = String(getSetting_('앱비밀번호') || '');
@@ -71,6 +73,7 @@ function handle_(req) {
     case 'addSwear': return addSwear_(p);
     case 'delSwear': return delSwear_(p);
     case 'setSubmitted': return setSubmitted_(p);
+    case 'setReceived': return setReceived_(p);
     case 'addLate': return addLate_(p);
     case 'delLate': return delLate_(p);
     case 'addLateCal': return addLateCal_(p);
@@ -87,7 +90,8 @@ function addSwear_(p) {
   const t = table_('욕설');
   const dup = t.data.map(swObj_).find(r => r.cls === cls && r.no === no && r.date === date);
   if (dup) return { rec: dup };
-  const rec = { id: Utilities.getUuid(), cls: cls, no: no, name: name, date: date, alertDate: alertOf_(date), submitted: false, submittedDate: '', calEventId: '', createdAt: Date.now() };
+  const due = /^\d{4}-\d{2}-\d{2}$/.test(String(p.dueDate || '')) ? String(p.dueDate) : alertOf_(date);
+  const rec = { id: Utilities.getUuid(), cls: cls, no: no, name: name, date: date, alertDate: due, submitted: false, submittedDate: '', calEventId: '', createdAt: Date.now(), received: !!p.received, receivedDate: p.received ? today_() : '' };
   let warn = '';
   try { rec.calEventId = makeAlertEvent_(rec); } catch (err) { warn = '기록은 저장했지만 캘린더 알림은 못 넣었어요.'; }
   t.sh.appendRow(swRow_(rec));
@@ -125,12 +129,23 @@ function setSubmitted_(p) {
   return { rec: rec, warn: warn };
 }
 
+function setReceived_(p) {
+  const t = table_('욕설');
+  const i = t.data.findIndex(r => String(r[0]) === String(p.id));
+  if (i < 0) return { ok: false, error: '기록을 찾지 못했어요.' };
+  const rec = swObj_(t.data[i]);
+  rec.received = !!p.received;
+  rec.receivedDate = p.received ? today_() : '';
+  t.sh.getRange(i + 2, 1, 1, SW_HEAD.length).setValues([swRow_(rec)]);
+  return { rec: rec };
+}
+
 function makeAlertEvent_(rec) {
   const cal = CalendarApp.getDefaultCalendar();
   const start = Utilities.parseDate(rec.alertDate + ' ' + ALERT_TIME, TZ, 'yyyy-MM-dd HH:mm');
   const end = new Date(start.getTime() + 10 * 60 * 1000);
   const ev = cal.createEvent('필사 확인: ' + rec.cls + '반 ' + rec.no + '번 ' + rec.name, start, end, {
-    description: rec.date + ' 수업 중 욕설 체크 → 필사 제출 확인하기 (한나T 빡침모드 ON)'
+    description: rec.date + ' 수업 중 욕설 체크 → 오늘이 필사 마감일이에요 (한나T 빡침모드 ON)'
   });
   ev.removeAllReminders();
   ev.addPopupReminder(0);
@@ -258,10 +273,11 @@ function str_(v) {
 function swObj_(r) {
   return { id: String(r[0]), cls: String(r[1]), no: Number(r[2]), name: String(r[3]), date: str_(r[4]), alertDate: str_(r[5]),
     submitted: r[6] === true || String(r[6]).toUpperCase() === 'Y' || String(r[6]).toUpperCase() === 'TRUE',
-    submittedDate: str_(r[7]), calEventId: String(r[8] || ''), createdAt: Number(r[9]) || 0 };
+    submittedDate: str_(r[7]), calEventId: String(r[8] || ''), createdAt: Number(r[9]) || 0,
+    received: String(r[10]).toUpperCase() === 'Y' || r[10] === true, receivedDate: str_(r[11]) };
 }
 function swRow_(o) {
-  return [o.id, String(o.cls), String(o.no), o.name, o.date, o.alertDate, o.submitted ? 'Y' : '', o.submittedDate || '', o.calEventId || '', String(o.createdAt || '')];
+  return [o.id, String(o.cls), String(o.no), o.name, o.date, o.alertDate, o.submitted ? 'Y' : '', o.submittedDate || '', o.calEventId || '', String(o.createdAt || ''), o.received ? 'Y' : '', o.receivedDate || ''];
 }
 function ltObj_(r) {
   return { id: String(r[0]), cls: String(r[1]), no: Number(r[2]), name: String(r[3]), date: str_(r[4]), weekStart: str_(r[5]),
