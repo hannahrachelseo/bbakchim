@@ -302,7 +302,7 @@ function cal_() {
   let cal = id ? CalendarApp.getCalendarById(id) : null;
   if (!cal) cal = CalendarApp.getOwnedCalendarsByName(CAL_NAME)[0] || null;
   if (!cal) {
-    cal = CalendarApp.createCalendar(CAL_NAME, { summary: '한나T 빡침모드 ON 앱이 만드는 필사 마감·청소당번 일정', timeZone: TZ });
+    cal = CalendarApp.createCalendar(CAL_NAME, { summary: '한나T 빡침모드 ON 앱이 만드는 필사 마감·청소당번 일정', timeZone: TZ, hidden: true, selected: false });
     try { cal.setColor('#F691B2'); } catch (err) { /* 색은 못 바꿔도 괜찮음 */ }
   }
   if (cal.getId() !== id) setSetting_('캘린더ID', cal.getId());
@@ -334,6 +334,54 @@ function moveToOwnCalendar() {
     moved++;
   });
   Logger.log('전용 캘린더로 옮긴 일정: ' + moved + '개');
+}
+
+/* ---------------- 아침 알림 메일 ---------------- */
+// 한 번만 실행: 전용 캘린더를 숨기고, 마감일 아침 8:20에 "안 낸 학생" 메일이 오도록 예약해요.
+function installAlerts() {
+  const cal = cal_();
+  try { cal.setHidden(true); } catch (err) { /* 무시 */ }
+  try { cal.setSelected(false); } catch (err) { /* 무시 */ }
+  if (!getSetting_('알림메일')) setSetting_('알림메일', Session.getEffectiveUser().getEmail());
+  ScriptApp.getProjectTriggers().forEach(t => {
+    if (['planMorningAlert', 'sendMorningAlert'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('planMorningAlert').timeBased().everyDays(1).atHour(6).inTimezone(TZ).create();
+  planMorningAlert();
+  Logger.log('아침 알림 설정 완료 → ' + getSetting_('알림메일'));
+}
+
+// 매일 새벽 6~7시: 오늘 마감인 학생이 있으면 오늘 08:20에 메일 보내기 예약
+function planMorningAlert() {
+  clearSendTriggers_();
+  const t = today_();
+  if (!pendingDue_().some(r => r.alertDate === t)) return;
+  const at = Utilities.parseDate(t + ' ' + ALERT_TIME, TZ, 'yyyy-MM-dd HH:mm');
+  if (at.getTime() > Date.now()) ScriptApp.newTrigger('sendMorningAlert').timeBased().at(at).create();
+}
+
+// 08:20: 보내는 순간 기준으로 아직 안 낸 학생만 골라서 메일
+function sendMorningAlert() {
+  clearSendTriggers_();
+  const t = today_();
+  const list = pendingDue_();
+  const todays = list.filter(r => r.alertDate === t), late = list.filter(r => r.alertDate < t);
+  if (!todays.length) return;
+  const md = s => Number(s.slice(5, 7)) + '/' + Number(s.slice(8, 10));
+  const line = r => '· ' + r.cls + '반 ' + r.no + '번 ' + r.name + ' (마감 ' + md(r.alertDate) + (r.received ? '' : ', 명심보감 아직 안 받아감') + ')';
+  let body = '오늘 마감인데 아직 안 낸 학생 ' + todays.length + '명\n' + todays.map(line).join('\n') + '\n';
+  if (late.length) body += '\n마감이 지났는데 아직 안 낸 학생 ' + late.length + '명\n' + late.map(line).join('\n') + '\n';
+  body += '\n앱에서 확인: https://hannahrachelseo.github.io/bbakchim/#submit\n(한나T 빡침모드 ON)';
+  const to = String(getSetting_('알림메일') || Session.getEffectiveUser().getEmail());
+  MailApp.sendEmail(to, '[빡침모드] 오늘 필사 마감 ' + todays.length + '명 아직 안 냈어요', body);
+}
+
+function pendingDue_() {
+  const t = today_();
+  return table_('욕설').data.filter(r => r[0]).map(swObj_).filter(r => !r.submitted && r.alertDate && r.alertDate <= t);
+}
+function clearSendTriggers_() {
+  ScriptApp.getProjectTriggers().forEach(tr => { if (tr.getHandlerFunction() === 'sendMorningAlert') ScriptApp.deleteTrigger(tr); });
 }
 function today_() { return Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd'); }
 function cleanDate_(s) { return /^\d{4}-\d{2}-\d{2}$/.test(String(s)) ? String(s) : today_(); }
