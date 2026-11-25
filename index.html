@@ -248,7 +248,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
   </section>
 
   <section data-view="submit" hidden>
-    <div class="h"><h2>제출해요</h2><p>써 오면 제출 칸을 체크하세요 · 마감일 08:20 캘린더 알림</p></div>
+    <div class="h"><h2>제출해요</h2><p>써 오면 제출 칸을 체크하세요</p></div>
     <div class="bar">
       <div class="chips" id="sChips" style="margin:0"></div>
       <select id="sCls" aria-label="반 필터"></select>
@@ -322,7 +322,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 
 <script>
 {
-const VERSION='1.1.0';
+const VERSION='1.2.0';
 const DEFAULT_URL='https://script.google.com/macros/s/AKfycbwxo7jFPI-XzC0XZ8yLXmGqrzFiL8LPRePL-pGkUami6kTY0JYydh21Rb4xGOyC9doX/exec';
 const DAYS=['일','월','화','수','목','금','토'];
 const DEFAULT_CLASSES=['1','2','3','4','5','9','10','11','12'];
@@ -463,7 +463,7 @@ function toggleSwear(cls,no){
   const due=man?ui.manDue:alertOf(date),recv=man?ui.manRecv:false;
   act('addSwear',{cls,no:Number(r.no),name:nameOf(r),date,dueDate:man?due:'',received:recv},{bkey,
     optimistic:()=>{S.swear.push({id:'tmp'+Date.now(),cls,no:Number(r.no),name:nameOf(r),date,alertDate:due,submitted:false,submittedDate:'',calEventId:'',received:recv,receivedDate:''})},
-    done:j=>toast(`${cls}반 ${nameOf(r)} ${man?'직접 등록':'체크'} · 마감 ${short(j.rec.alertDate)} 08:20 알림${recv?'':' · 받으러 와요에 올라갔어요'}`)});
+    done:j=>toast(`${cls}반 ${nameOf(r)} ${man?'직접 등록':'체크'} · 마감 ${short(j.rec.alertDate)}${recv?'':' · 받으러 와요에 올라갔어요'}`)});
 }
 
 /* ---------- 받으러 와요 / 제출해요 ---------- */
@@ -537,9 +537,8 @@ function renderLate(){
   }
   renderCal();
   const rows=[...S.late].sort((a,b)=>b.weekStart.localeCompare(a.weekStart)||b.date.localeCompare(a.date));
-  $('lateTable').innerHTML=rows.length?`<thead><tr><th>지각일</th><th>번호</th><th>이름</th><th>청소 주간</th><th>구글 캘린더</th><th></th></tr></thead><tbody>`+
+  $('lateTable').innerHTML=rows.length?`<thead><tr><th>지각일</th><th>번호</th><th>이름</th><th>청소 주간</th><th></th></tr></thead><tbody>`+
     rows.map(r=>{const tmp=String(r.id).startsWith('tmp');return `<tr><td>${esc(short(r.date))}</td><td>${esc(r.no)}</td><td><b>${esc(r.name)}</b></td><td><span class="tag">${esc(short(r.weekStart))} ~ ${esc(short(addDays(r.weekStart,4)))}</span></td>
-    <td>${r.calEventId?'<span class="tag ok">넣음</span>':tmp?'<span class="tag mute">저장 중</span>':`<button class="del" data-gcal="${esc(r.id)}">캘린더에 넣기</button>`}</td>
     <td>${tmp?'':`<button class="del" data-del="late" data-id="${esc(r.id)}">삭제</button>`}</td></tr>`}).join('')+'</tbody>'
     :'<tr><td class="empty">아직 지각 기록이 없어요.</td></tr>';
 }
@@ -564,12 +563,12 @@ function toggleLate(no){
   const date=ui.lateDate;const bkey=`l|${r.no}|${date}`;
   if(busy.has(bkey)){toast('저장 중이에요. 잠깐만요!');return}
   const ex=S.late.find(x=>Number(x.no)===Number(r.no)&&x.date===date);
-  if(ex){act('delLate',{id:ex.id},{bkey,optimistic:()=>{S.late=S.late.filter(x=>x!==ex)},done:()=>toast(`${nameOf(r)} 지각 취소 · 캘린더에서도 지웠어요`)});return}
+  if(ex){act('delLate',{id:ex.id},{bkey,optimistic:()=>{S.late=S.late.filter(x=>x!==ex)},done:()=>toast(`${nameOf(r)} 지각 취소`)});return}
   let ws=nextMon(date);while(weekCount(ws)>=MAX)ws=addDays(ws,7);
   ui.month=ws.slice(0,8)+'01';
   act('addLate',{no:Number(r.no),name:nameOf(r),date},{bkey,
     optimistic:()=>{S.late.push({id:'tmp'+Date.now(),cls:hr,no:Number(r.no),name:nameOf(r),date,weekStart:ws,calEventId:''})},
-    done:j=>toast(`${nameOf(r)} → ${short(j.rec.weekStart)}~${short(addDays(j.rec.weekStart,4))} 청소${j.moved?' (앞 주가 꽉 차서 다음 주로)':''} · 캘린더에도 넣었어요`)});
+    done:j=>toast(`${nameOf(r)} → ${short(j.rec.weekStart)}~${short(addDays(j.rec.weekStart,4))} 청소${j.moved?' (앞 주가 꽉 차서 다음 주로)':''}`)});
 }
 
 /* ---------- 명렬표 ---------- */
@@ -690,13 +689,12 @@ document.addEventListener('click',async e=>{
     act('setReceived',{id:r.id,received:true},{optimistic:()=>{r.received=true;r.receivedDate=today()},done:()=>toast(`${r.name} 받아감 → 제출해요로 옮겼어요`)});return}
   if(b.dataset.smon){const n=Number(b.dataset.smon);if(!n)ui.smonth=today().slice(0,8)+'01';else{const m=parse(ui.smonth);m.setMonth(m.getMonth()+n);ui.smonth=ymd(m)}renderSwCal();return}
   if(b.dataset.late){toggleLate(b.dataset.late);return}
-  if(b.dataset.gcal){b.disabled=true;b.textContent='넣는 중…';act('addLateCal',{id:b.dataset.gcal},{done:()=>toast('구글 캘린더에 넣었어요')});return}
   if(b.dataset.mon){const n=Number(b.dataset.mon);if(!n)ui.month=today().slice(0,8)+'01';else{const m=parse(ui.month);m.setMonth(m.getMonth()+n);ui.month=ymd(m)}renderCal();return}
   if(b.dataset.set){ui.setCls=b.dataset.set;renderSetup();fillRosterText();return}
   if(b.dataset.del){
     if(!b.classList.contains('arm')){b.classList.add('arm');b.textContent='정말 삭제';setTimeout(()=>{b.classList.remove('arm');b.textContent='삭제'},3000);return}
     const col=b.dataset.del,id=b.dataset.id;
-    act(col==='swear'?'delSwear':'delLate',{id},{optimistic:()=>{S[col]=S[col].filter(x=>x.id!==id)},done:()=>toast('삭제했어요 · 캘린더 일정도 지웠어요')});
+    act(col==='swear'?'delSwear':'delLate',{id},{optimistic:()=>{S[col]=S[col].filter(x=>x.id!==id)},done:()=>toast('삭제했어요')});
     return;
   }
   if(b.id==='applyXls'){applyPending();return}
@@ -723,7 +721,7 @@ document.addEventListener('change',e=>{
   const t=e.target;
   if(t.id==='xlsFile'){if(t.files&&t.files.length)readFiles(t.files);return}
   if(t.dataset.sub){const r=S.swear.find(x=>x.id===t.dataset.sub);if(!r)return;const on=t.checked;
-    act('setSubmitted',{id:r.id,submitted:on},{optimistic:()=>{r.submitted=on;r.submittedDate=on?today():''},done:()=>toast(on?`${r.name} 제출 완료 · 마감 알림 지웠어요`:`${r.name} 제출 취소`)});return}
+    act('setSubmitted',{id:r.id,submitted:on},{optimistic:()=>{r.submitted=on;r.submittedDate=on?today():''},done:()=>toast(on?`${r.name} 제출 완료`:`${r.name} 제출 취소`)});return}
   if(t.id==='pCls'){ui.pcls=t.value;renderPickup();return}
   if(t.id==='sCls'){ui.scls=t.value;renderSubmit();return}
   if(t.id==='manOn'){ui.manOn=t.checked;$('manualBox').classList.toggle('on',t.checked);if(t.checked&&!ui.manDue)toast('마감일을 골라 주세요.');return}

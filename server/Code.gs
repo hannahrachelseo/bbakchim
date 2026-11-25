@@ -14,8 +14,7 @@ const TZ = 'Asia/Seoul';
 const SHEET_ID = '14lqKtwJApdlzrnhbLDOE9L4dLGj1s_T-J79G5lWnRNs';
 function ss_() { return SpreadsheetApp.openById(SHEET_ID); }
 const MAX_PER_WEEK = 4;
-const ALERT_TIME = '08:20';
-const CAL_NAME = '한나T 빡침모드';
+const CAL_NAME = '한나T 빡침모드'; // 예전에 쓰던 전용 캘린더 이름 (지우기용)
 const SW_HEAD = ['id', '반', '번호', '이름', '체크일', '마감일', '제출', '제출일', '알림일정ID', '만든시각', '받아감', '받아간날'];
 const LT_HEAD = ['id', '반', '번호', '이름', '지각일', '청소시작(월)', '캘린더ID', '만든시각'];
 const RO_HEAD = ['반', '번호', '이름'];
@@ -35,7 +34,6 @@ function setup() {
     key = Utilities.getUuid().replace(/-/g, '').slice(0, 10);
     setSetting_('앱비밀번호', key);
   }
-  cal_(); // 전용 캘린더 만들기 + 권한 받기
   const msg = '설정 완료!\n앱 비밀번호: ' + key + '\n(시트의 "설정" 탭에도 적혀 있어요)\n스크립트 시간대: ' + Session.getScriptTimeZone();
   Logger.log(msg);
   try { SpreadsheetApp.getUi().alert(msg); } catch (e) { /* 편집기에서 실행하면 로그에만 표시 */ }
@@ -77,7 +75,6 @@ function handle_(req) {
     case 'setReceived': return setReceived_(p);
     case 'addLate': return addLate_(p);
     case 'delLate': return delLate_(p);
-    case 'addLateCal': return addLateCal_(p);
     case 'setHomeroom': setSetting_('우리반', String(p.homeroom || '')); return {};
     case 'setRosters': return setRosters_(p.rosters || {}, true);
     case 'setRoster': { const r = {}; r[String(p.cls)] = p.students || []; return setRosters_(r, false); }
@@ -93,17 +90,14 @@ function addSwear_(p) {
   if (dup) return { rec: dup };
   const due = /^\d{4}-\d{2}-\d{2}$/.test(String(p.dueDate || '')) ? String(p.dueDate) : alertOf_(date);
   const rec = { id: Utilities.getUuid(), cls: cls, no: no, name: name, date: date, alertDate: due, submitted: false, submittedDate: '', calEventId: '', createdAt: Date.now(), received: !!p.received, receivedDate: p.received ? today_() : '' };
-  let warn = '';
-  try { rec.calEventId = makeAlertEvent_(rec); } catch (err) { warn = '기록은 저장했지만 캘린더 알림은 못 넣었어요.'; }
   t.sh.appendRow(swRow_(rec));
-  return { rec: rec, warn: warn };
+  return { rec: rec };
 }
 
 function delSwear_(p) {
   const t = table_('욕설');
   const i = t.data.findIndex(r => String(r[0]) === String(p.id));
   if (i < 0) return {};
-  deleteEvent_(swObj_(t.data[i]).calEventId);
   t.sh.deleteRow(i + 2);
   return {};
 }
@@ -113,21 +107,10 @@ function setSubmitted_(p) {
   const i = t.data.findIndex(r => String(r[0]) === String(p.id));
   if (i < 0) return { ok: false, error: '기록을 찾지 못했어요.' };
   const rec = swObj_(t.data[i]);
-  let warn = '';
-  if (p.submitted) {
-    deleteEvent_(rec.calEventId);
-    rec.calEventId = '';
-    rec.submitted = true;
-    rec.submittedDate = today_();
-  } else {
-    rec.submitted = false;
-    rec.submittedDate = '';
-    if (!rec.calEventId && rec.alertDate >= today_()) {
-      try { rec.calEventId = makeAlertEvent_(rec); } catch (err) { warn = '캘린더 알림은 다시 넣지 못했어요.'; }
-    }
-  }
+  rec.submitted = !!p.submitted;
+  rec.submittedDate = p.submitted ? today_() : '';
   t.sh.getRange(i + 2, 1, 1, SW_HEAD.length).setValues([swRow_(rec)]);
-  return { rec: rec, warn: warn };
+  return { rec: rec };
 }
 
 function setReceived_(p) {
@@ -139,18 +122,6 @@ function setReceived_(p) {
   rec.receivedDate = p.received ? today_() : '';
   t.sh.getRange(i + 2, 1, 1, SW_HEAD.length).setValues([swRow_(rec)]);
   return { rec: rec };
-}
-
-function makeAlertEvent_(rec) {
-  const cal = cal_();
-  const start = Utilities.parseDate(rec.alertDate + ' ' + ALERT_TIME, TZ, 'yyyy-MM-dd HH:mm');
-  const end = new Date(start.getTime() + 10 * 60 * 1000);
-  const ev = cal.createEvent('필사 확인: ' + rec.cls + '반 ' + rec.no + '번 ' + rec.name, start, end, {
-    description: rec.date + ' 수업 중 욕설 체크 → 오늘이 필사 마감일이에요 (한나T 빡침모드 ON)'
-  });
-  ev.removeAllReminders();
-  ev.addPopupReminder(0);
-  return ev.getId();
 }
 
 /* ---------------- 지각 · 청소 ---------------- */
@@ -165,43 +136,16 @@ function addLate_(p) {
   let ws = nextMon_(date), moved = false;
   while (list.filter(r => r.weekStart === ws).length >= MAX_PER_WEEK) { ws = addDays_(ws, 7); moved = true; }
   const rec = { id: Utilities.getUuid(), cls: homeroom, no: no, name: name, date: date, weekStart: ws, calEventId: '', createdAt: Date.now() };
-  let warn = '';
-  try { rec.calEventId = makeCleanEvent_(rec); } catch (err) { warn = '청소 배정은 저장했지만 캘린더에는 못 넣었어요.'; }
   t.sh.appendRow(ltRow_(rec));
-  return { rec: rec, moved: moved, warn: warn };
+  return { rec: rec, moved: moved };
 }
 
 function delLate_(p) {
   const t = table_('지각');
   const i = t.data.findIndex(r => String(r[0]) === String(p.id));
   if (i < 0) return {};
-  deleteEvent_(ltObj_(t.data[i]).calEventId);
   t.sh.deleteRow(i + 2);
   return {};
-}
-
-function addLateCal_(p) {
-  const t = table_('지각');
-  const i = t.data.findIndex(r => String(r[0]) === String(p.id));
-  if (i < 0) return { ok: false, error: '기록을 찾지 못했어요.' };
-  const rec = ltObj_(t.data[i]);
-  if (rec.calEventId) return { rec: rec };
-  rec.calEventId = makeCleanEvent_(rec);
-  t.sh.getRange(i + 2, 1, 1, LT_HEAD.length).setValues([ltRow_(rec)]);
-  return { rec: rec };
-}
-
-function makeCleanEvent_(rec) {
-  const cal = cal_();
-  const stz = Session.getScriptTimeZone();
-  // 정오로 잡아서 스크립트 시간대가 달라도 날짜가 밀리지 않게 함 (끝 날짜는 토요일 = 금요일까지)
-  const s = Utilities.parseDate(rec.weekStart + ' 12:00', stz, 'yyyy-MM-dd HH:mm');
-  const e = Utilities.parseDate(addDays_(rec.weekStart, 5) + ' 12:00', stz, 'yyyy-MM-dd HH:mm');
-  const ev = cal.createAllDayEvent('청소당번 ' + rec.no + '번 ' + rec.name, s, e, {
-    description: rec.date + ' 지각 → ' + rec.weekStart + ' 주 월~금 청소 (한나T 빡침모드 ON)'
-  });
-  ev.removeAllReminders();
-  return ev.getId();
 }
 
 /* ---------------- 명렬표 ---------------- */
@@ -287,101 +231,26 @@ function ltObj_(r) {
 function ltRow_(o) {
   return [o.id, String(o.cls), String(o.no), o.name, o.date, o.weekStart, o.calEventId || '', String(o.createdAt || '')];
 }
-function deleteEvent_(id) {
-  if (!id) return;
-  // 전용 캘린더 먼저, 없으면 예전 기본 캘린더에서 찾아 지움
-  try { const ev = cal_().getEventById(id); if (ev) { ev.deleteEvent(); return; } } catch (err) { /* 무시 */ }
-  try { const ev = CalendarApp.getDefaultCalendar().getEventById(id); if (ev) ev.deleteEvent(); } catch (err) { /* 이미 지워졌으면 무시 */ }
-}
-
-/* ---------------- 전용 캘린더 ---------------- */
-// 빡침모드 일정은 기본 캘린더가 아니라 "한나T 빡침모드" 캘린더에만 넣어요.
-// 폰 캘린더 앱에서 이 캘린더만 숨기면 개인 일정과 섞이지 않아요.
-function cal_() {
+/* ---------------- 구글 캘린더 정리 (한 번만 실행) ---------------- */
+// 이제 앱은 구글 캘린더를 쓰지 않아요. 예전에 넣은 일정을 모두 지우고, 시트의 일정ID 칸도 비워요.
+function removeCalendar() {
+  let n = 0;
   const id = String(getSetting_('캘린더ID') || '');
-  let cal = id ? CalendarApp.getCalendarById(id) : null;
-  if (!cal) cal = CalendarApp.getOwnedCalendarsByName(CAL_NAME)[0] || null;
-  if (!cal) {
-    cal = CalendarApp.createCalendar(CAL_NAME, { summary: '한나T 빡침모드 ON 앱이 만드는 필사 마감·청소당번 일정', timeZone: TZ, hidden: true, selected: false });
-    try { cal.setColor('#F691B2'); } catch (err) { /* 색은 못 바꿔도 괜찮음 */ }
-  }
-  if (cal.getId() !== id) setSetting_('캘린더ID', cal.getId());
-  return cal;
-}
-
-// 한 번만 실행: 기본 캘린더에 들어가 있던 빡침모드 일정을 전용 캘린더로 옮겨요.
-function moveToOwnCalendar() {
-  const cal = cal_();
-  let moved = 0;
-  const sw = table_('욕설');
-  sw.data.forEach((r, i) => {
-    const rec = swObj_(r);
-    if (!rec.calEventId) return;
-    if (cal.getEventById(rec.calEventId)) return; // 이미 전용 캘린더에 있음
-    deleteEvent_(rec.calEventId);
-    rec.calEventId = rec.submitted ? '' : makeAlertEvent_(rec);
-    sw.sh.getRange(i + 2, 1, 1, SW_HEAD.length).setValues([swRow_(rec)]);
-    moved++;
+  const own = (id ? [CalendarApp.getCalendarById(id)] : []).concat(CalendarApp.getOwnedCalendarsByName(CAL_NAME)).filter(c => c);
+  const seen = {};
+  own.forEach(c => { if (seen[c.getId()]) return; seen[c.getId()] = 1; c.deleteCalendar(); n++; });
+  const def = CalendarApp.getDefaultCalendar();
+  [['욕설', 9, SW_HEAD.length], ['지각', 7, LT_HEAD.length]].forEach(([name, col]) => {
+    const t = table_(name);
+    t.data.forEach((r, i) => {
+      const ev = String(r[col - 1] || '');
+      if (!ev) return;
+      try { const e = def.getEventById(ev); if (e) e.deleteEvent(); } catch (err) { /* 이미 없음 */ }
+      t.sh.getRange(i + 2, col).setValue('');
+    });
   });
-  const lt = table_('지각');
-  lt.data.forEach((r, i) => {
-    const rec = ltObj_(r);
-    if (!rec.calEventId) return;
-    if (cal.getEventById(rec.calEventId)) return;
-    deleteEvent_(rec.calEventId);
-    rec.calEventId = makeCleanEvent_(rec);
-    lt.sh.getRange(i + 2, 1, 1, LT_HEAD.length).setValues([ltRow_(rec)]);
-    moved++;
-  });
-  Logger.log('전용 캘린더로 옮긴 일정: ' + moved + '개');
-}
-
-/* ---------------- 아침 알림 메일 ---------------- */
-// 한 번만 실행: 전용 캘린더를 숨기고, 마감일 아침 8:20에 "안 낸 학생" 메일이 오도록 예약해요.
-function installAlerts() {
-  const cal = cal_();
-  try { cal.setHidden(true); } catch (err) { /* 무시 */ }
-  try { cal.setSelected(false); } catch (err) { /* 무시 */ }
-  if (!getSetting_('알림메일')) setSetting_('알림메일', Session.getEffectiveUser().getEmail());
-  ScriptApp.getProjectTriggers().forEach(t => {
-    if (['planMorningAlert', 'sendMorningAlert'].indexOf(t.getHandlerFunction()) >= 0) ScriptApp.deleteTrigger(t);
-  });
-  ScriptApp.newTrigger('planMorningAlert').timeBased().everyDays(1).atHour(6).inTimezone(TZ).create();
-  planMorningAlert();
-  Logger.log('아침 알림 설정 완료 → ' + getSetting_('알림메일'));
-}
-
-// 매일 새벽 6~7시: 오늘 마감인 학생이 있으면 오늘 08:20에 메일 보내기 예약
-function planMorningAlert() {
-  clearSendTriggers_();
-  const t = today_();
-  if (!pendingDue_().some(r => r.alertDate === t)) return;
-  const at = Utilities.parseDate(t + ' ' + ALERT_TIME, TZ, 'yyyy-MM-dd HH:mm');
-  if (at.getTime() > Date.now()) ScriptApp.newTrigger('sendMorningAlert').timeBased().at(at).create();
-}
-
-// 08:20: 보내는 순간 기준으로 아직 안 낸 학생만 골라서 메일
-function sendMorningAlert() {
-  clearSendTriggers_();
-  const t = today_();
-  const list = pendingDue_();
-  const todays = list.filter(r => r.alertDate === t), late = list.filter(r => r.alertDate < t);
-  if (!todays.length) return;
-  const md = s => Number(s.slice(5, 7)) + '/' + Number(s.slice(8, 10));
-  const line = r => '· ' + r.cls + '반 ' + r.no + '번 ' + r.name + ' (마감 ' + md(r.alertDate) + (r.received ? '' : ', 명심보감 아직 안 받아감') + ')';
-  let body = '오늘 마감인데 아직 안 낸 학생 ' + todays.length + '명\n' + todays.map(line).join('\n') + '\n';
-  if (late.length) body += '\n마감이 지났는데 아직 안 낸 학생 ' + late.length + '명\n' + late.map(line).join('\n') + '\n';
-  body += '\n앱에서 확인: https://hannahrachelseo.github.io/bbakchim/#submit\n(한나T 빡침모드 ON)';
-  const to = String(getSetting_('알림메일') || Session.getEffectiveUser().getEmail());
-  MailApp.sendEmail(to, '[빡침모드] 오늘 필사 마감 ' + todays.length + '명 아직 안 냈어요', body);
-}
-
-function pendingDue_() {
-  const t = today_();
-  return table_('욕설').data.filter(r => r[0]).map(swObj_).filter(r => !r.submitted && r.alertDate && r.alertDate <= t);
-}
-function clearSendTriggers_() {
-  ScriptApp.getProjectTriggers().forEach(tr => { if (tr.getHandlerFunction() === 'sendMorningAlert') ScriptApp.deleteTrigger(tr); });
+  setSetting_('캘린더ID', '');
+  Logger.log('지운 캘린더: ' + n + '개');
 }
 function today_() { return Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd'); }
 function cleanDate_(s) { return /^\d{4}-\d{2}-\d{2}$/.test(String(s)) ? String(s) : today_(); }
