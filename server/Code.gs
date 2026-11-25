@@ -15,6 +15,7 @@ const SHEET_ID = '14lqKtwJApdlzrnhbLDOE9L4dLGj1s_T-J79G5lWnRNs';
 function ss_() { return SpreadsheetApp.openById(SHEET_ID); }
 const MAX_PER_WEEK = 4;
 const ALERT_TIME = '08:20';
+const CAL_NAME = '한나T 빡침모드';
 const SW_HEAD = ['id', '반', '번호', '이름', '체크일', '마감일', '제출', '제출일', '알림일정ID', '만든시각', '받아감', '받아간날'];
 const LT_HEAD = ['id', '반', '번호', '이름', '지각일', '청소시작(월)', '캘린더ID', '만든시각'];
 const RO_HEAD = ['반', '번호', '이름'];
@@ -34,7 +35,7 @@ function setup() {
     key = Utilities.getUuid().replace(/-/g, '').slice(0, 10);
     setSetting_('앱비밀번호', key);
   }
-  CalendarApp.getDefaultCalendar(); // 캘린더 권한 받기
+  cal_(); // 전용 캘린더 만들기 + 권한 받기
   const msg = '설정 완료!\n앱 비밀번호: ' + key + '\n(시트의 "설정" 탭에도 적혀 있어요)\n스크립트 시간대: ' + Session.getScriptTimeZone();
   Logger.log(msg);
   try { SpreadsheetApp.getUi().alert(msg); } catch (e) { /* 편집기에서 실행하면 로그에만 표시 */ }
@@ -141,7 +142,7 @@ function setReceived_(p) {
 }
 
 function makeAlertEvent_(rec) {
-  const cal = CalendarApp.getDefaultCalendar();
+  const cal = cal_();
   const start = Utilities.parseDate(rec.alertDate + ' ' + ALERT_TIME, TZ, 'yyyy-MM-dd HH:mm');
   const end = new Date(start.getTime() + 10 * 60 * 1000);
   const ev = cal.createEvent('필사 확인: ' + rec.cls + '반 ' + rec.no + '번 ' + rec.name, start, end, {
@@ -191,7 +192,7 @@ function addLateCal_(p) {
 }
 
 function makeCleanEvent_(rec) {
-  const cal = CalendarApp.getDefaultCalendar();
+  const cal = cal_();
   const stz = Session.getScriptTimeZone();
   // 정오로 잡아서 스크립트 시간대가 달라도 날짜가 밀리지 않게 함 (끝 날짜는 토요일 = 금요일까지)
   const s = Utilities.parseDate(rec.weekStart + ' 12:00', stz, 'yyyy-MM-dd HH:mm');
@@ -288,7 +289,51 @@ function ltRow_(o) {
 }
 function deleteEvent_(id) {
   if (!id) return;
+  // 전용 캘린더 먼저, 없으면 예전 기본 캘린더에서 찾아 지움
+  try { const ev = cal_().getEventById(id); if (ev) { ev.deleteEvent(); return; } } catch (err) { /* 무시 */ }
   try { const ev = CalendarApp.getDefaultCalendar().getEventById(id); if (ev) ev.deleteEvent(); } catch (err) { /* 이미 지워졌으면 무시 */ }
+}
+
+/* ---------------- 전용 캘린더 ---------------- */
+// 빡침모드 일정은 기본 캘린더가 아니라 "한나T 빡침모드" 캘린더에만 넣어요.
+// 폰 캘린더 앱에서 이 캘린더만 숨기면 개인 일정과 섞이지 않아요.
+function cal_() {
+  const id = String(getSetting_('캘린더ID') || '');
+  let cal = id ? CalendarApp.getCalendarById(id) : null;
+  if (!cal) cal = CalendarApp.getOwnedCalendarsByName(CAL_NAME)[0] || null;
+  if (!cal) {
+    cal = CalendarApp.createCalendar(CAL_NAME, { summary: '한나T 빡침모드 ON 앱이 만드는 필사 마감·청소당번 일정', timeZone: TZ });
+    try { cal.setColor('#F691B2'); } catch (err) { /* 색은 못 바꿔도 괜찮음 */ }
+  }
+  if (cal.getId() !== id) setSetting_('캘린더ID', cal.getId());
+  return cal;
+}
+
+// 한 번만 실행: 기본 캘린더에 들어가 있던 빡침모드 일정을 전용 캘린더로 옮겨요.
+function moveToOwnCalendar() {
+  const cal = cal_();
+  let moved = 0;
+  const sw = table_('욕설');
+  sw.data.forEach((r, i) => {
+    const rec = swObj_(r);
+    if (!rec.calEventId) return;
+    if (cal.getEventById(rec.calEventId)) return; // 이미 전용 캘린더에 있음
+    deleteEvent_(rec.calEventId);
+    rec.calEventId = rec.submitted ? '' : makeAlertEvent_(rec);
+    sw.sh.getRange(i + 2, 1, 1, SW_HEAD.length).setValues([swRow_(rec)]);
+    moved++;
+  });
+  const lt = table_('지각');
+  lt.data.forEach((r, i) => {
+    const rec = ltObj_(r);
+    if (!rec.calEventId) return;
+    if (cal.getEventById(rec.calEventId)) return;
+    deleteEvent_(rec.calEventId);
+    rec.calEventId = makeCleanEvent_(rec);
+    lt.sh.getRange(i + 2, 1, 1, LT_HEAD.length).setValues([ltRow_(rec)]);
+    moved++;
+  });
+  Logger.log('전용 캘린더로 옮긴 일정: ' + moved + '개');
 }
 function today_() { return Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd'); }
 function cleanDate_(s) { return /^\d{4}-\d{2}-\d{2}$/.test(String(s)) ? String(s) : today_(); }
