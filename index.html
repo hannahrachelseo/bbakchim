@@ -143,6 +143,15 @@ tr.late td{background:var(--pinkBg)}
 .preview{margin-top:14px}
 textarea{width:100%;min-height:220px;padding:14px;border-radius:18px;border:2px solid var(--line);background:var(--panel);font-size:16px;line-height:1.6}
 textarea:focus{border-color:var(--pink);outline:none}
+.stepTag{display:inline-block;font-family:"Jua";font-size:14px;background:var(--pinkBg);color:var(--pink2);padding:4px 12px;border-radius:12px;margin-bottom:8px}
+.inbox{background:var(--pinkBg);border-radius:20px;padding:14px;margin-bottom:12px}
+.inbox>b{font-family:"Jua";font-weight:400;font-size:18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.inrow{display:flex;gap:8px}.inrow #inNo{width:84px;flex:none}.inrow #inName{flex:1;min-width:0}.inrow .btn{flex:none}
+.mvlist{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mv{display:flex;align-items:center;gap:6px;min-height:46px;padding:4px 5px 4px 6px;border:2px solid var(--line);border-radius:16px;background:var(--panel)}
+.mv .no{flex:none;width:26px;height:26px;border-radius:50%;background:var(--pinkBg);color:var(--pink2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.mv b{flex:1;min-width:0;font-size:15px;white-space:nowrap;letter-spacing:-.3px}
+.mv .del{min-height:34px;padding:0 9px;font-size:12px}
 .btn{min-height:48px;padding:0 22px;border-radius:24px;border:0;background:var(--pink);color:#fff;font-family:"Jua";font-size:18px;box-shadow:0 4px 0 var(--pink2)}
 .btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--pink2)}
 .btn.ghost{background:var(--panel);color:var(--mute);border:2px solid var(--line);box-shadow:none}
@@ -293,9 +302,10 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
       </div>
       <button class="btn" id="saveCfg">연결하기</button>
     </div>
-    <div class="panel">
-      <h3>엑셀로 한 번에 바꾸기</h3>
-      <p class="hint">나이스 교과시간별출석부 엑셀을 반별로 여러 개 한꺼번에 올리면, 반·번호·이름만 뽑아서 기존 명렬표를 통째로 바꿔요. 점수 칸은 무시해요. 새 학년이 되면 새 파일만 올리면 끝!</p>
+    <div class="panel" id="xlsPanel">
+      <span class="stepTag">① 학기 초 · 한 번만</span>
+      <h3>엑셀로 명렬표 한 번에 올리기</h3>
+      <p class="hint">나이스 교과시간별출석부 엑셀을 폰에서 반별로 여러 개 한꺼번에 고르면, 반·번호·이름만 뽑아서 기존 명렬표를 통째로 바꿔요. 점수 칸은 무시해요. 새 학년이 되면 새 파일만 올리면 끝!</p>
       <label class="drop" id="drop">
         <svg viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
         <b>엑셀 파일 고르기</b><span>눌러서 고르거나 여기로 끌어다 놓기 (.xlsx 여러 개 가능)</span>
@@ -307,12 +317,20 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
       <h3>우리 반 (지각 청소용)</h3>
       <select id="homeroom" aria-label="우리 반"></select>
     </div>
-    <div class="panel">
-      <details><summary>한 반만 직접 고치기 (전학생 등)</summary>
-        <div class="chips" id="setChips" style="margin-top:10px"></div>
+    <div class="panel" id="movePanel">
+      <span class="stepTag">② 학기 중 · 바뀔 때마다</span>
+      <h3>전입 · 전출</h3>
+      <p class="hint">엑셀을 다시 올리지 않고 앱에서 바로 고쳐요. 전출해도 그 학생의 필사·청소 기록은 그대로 남아요.</p>
+      <div class="chips" id="setChips"></div>
+      <div class="inbox">
+        <b>➕ 전입생 추가 <span class="hint" id="rosterInfo" style="margin:0"></span></b>
+        <div class="inrow"><input id="inNo" class="field" type="number" inputmode="numeric" min="1" placeholder="번호" aria-label="번호"><input id="inName" class="field" type="text" placeholder="이름" aria-label="이름" autocomplete="off"><button class="btn" id="addIn">전입</button></div>
+      </div>
+      <div class="mvlist" id="mvList"></div>
+      <details style="margin-top:16px"><summary style="font-size:16px;min-height:36px">목록 통째로 고치기</summary>
         <p class="hint">한 줄에 한 명씩 “번호 이름”으로 적으세요.</p>
         <textarea id="rosterText" placeholder="1 김OO&#10;2 이OO"></textarea>
-        <div class="bar" style="margin-top:12px"><button class="btn" id="saveRoster">이 반 저장</button><span class="hint" id="rosterInfo" style="margin:0"></span></div>
+        <div class="bar" style="margin-top:12px"><button class="btn" id="saveRoster">이 반 저장</button></div>
       </details>
     </div>
     <p class="hint" style="text-align:center;margin-top:22px" id="ver"></p>
@@ -322,7 +340,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 
 <script>
 {
-const VERSION='1.2.0';
+const VERSION='1.3.0';
 const DEFAULT_URL='https://script.google.com/macros/s/AKfycbwxo7jFPI-XzC0XZ8yLXmGqrzFiL8LPRePL-pGkUami6kTY0JYydh21Rb4xGOyC9doX/exec';
 const DAYS=['일','월','화','수','목','금','토'];
 const DEFAULT_CLASSES=['1','2','3','4','5','9','10','11','12'];
@@ -585,7 +603,18 @@ function fillRosterText(){
   if(!classes().includes(ui.setCls))ui.setCls=classes()[0];
   const r=S.rosters[ui.setCls]||[];
   $('rosterText').value=r.map(x=>`${x.no} ${x.name}`).join('\n');
-  $('rosterInfo').textContent=r.length?`${ui.setCls}반 ${r.length}명`:`${ui.setCls}반 명렬표 없음`;
+  renderMove();
+}
+function renderMove(){
+  const c=ui.setCls,r=(S.rosters[c]||[]).slice().sort((a,b)=>a.no-b.no);
+  $('rosterInfo').textContent=r.length?`· 지금 ${c}반 ${r.length}명`:`· ${c}반 명렬표 없음`;
+  const next=r.length?Math.max(...r.map(x=>Number(x.no)||0))+1:1;
+  if(document.activeElement!==$('inNo'))$('inNo').value=next;
+  $('mvList').innerHTML=r.length?r.map(x=>`<div class="mv"><span class="no">${esc(x.no)}</span><b>${esc(x.name)}</b><button class="del" data-out="${esc(x.no)}">전출</button></div>`).join(''):'<p class="hint">이 반에는 아직 학생이 없어요.</p>';
+}
+function saveClassRoster(c,list,msg){
+  act('setRoster',{cls:c,students:list},{bkey:'roster',optimistic:()=>{S.rosters[c]=list},done:()=>toast(msg)});
+  fillRosterText();
 }
 function parseRoster(txt){
   const out=[];let auto=1;
@@ -679,6 +708,7 @@ const VIEWS=['home','swear-check','pickup','submit','late','setup'];
 function route(){const h=location.hash.slice(1);const prev=ui.view;ui.view=VIEWS.includes(h)?h:'home';render();if(ui.view==='setup'&&prev!=='setup'){fillRosterText();$('cfgUrl').value=cfg.url||'';$('cfgKey').value=cfg.key||''}window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);
 
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.target.id==='inName'||e.target.id==='inNo')){e.preventDefault();$('addIn').click()}});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.go){location.hash=b.dataset.go;return}
@@ -699,9 +729,29 @@ document.addEventListener('click',async e=>{
   }
   if(b.id==='applyXls'){applyPending();return}
   if(b.id==='cancelXls'){pending=null;$('xlsFile').value='';renderPreview();return}
+  if(b.id==='addIn'){
+    if(busy.has('roster'))return;
+    const c=ui.setCls,no=Number($('inNo').value),name=$('inName').value.trim();
+    if(!c){toast('반을 먼저 골라 주세요.');return}
+    if(!name){toast('전입생 이름을 넣어 주세요.');$('inName').focus();return}
+    if(!(no>0)){toast('번호를 넣어 주세요.');return}
+    const cur=(S.rosters[c]||[]).slice();
+    if(cur.some(x=>Number(x.no)===no)){toast(`${c}반 ${no}번은 이미 있어요. 다른 번호를 넣어 주세요.`);return}
+    cur.push({no,name});cur.sort((a,b)=>a.no-b.no);
+    $('inName').value='';$('inNo').blur();
+    saveClassRoster(c,cur,`${c}반 ${no}번 ${name} 전입 완료`);
+    return;
+  }
+  if(b.dataset.out){
+    if(busy.has('roster'))return;
+    const c=ui.setCls,no=Number(b.dataset.out),st=(S.rosters[c]||[]).find(x=>Number(x.no)===no);if(!st)return;
+    if(!confirm(`${c}반 ${no}번 ${st.name} 학생을 전출 처리할까요?\n명렬표에서만 빠지고, 필사·청소 기록은 남아요.`))return;
+    saveClassRoster(c,(S.rosters[c]||[]).filter(x=>Number(x.no)!==no),`${c}반 ${no}번 ${st.name} 전출 완료`);
+    return;
+  }
   if(b.id==='saveRoster'){
     const list=parseRoster($('rosterText').value);const c=ui.setCls;
-    act('setRoster',{cls:c,students:list},{done:()=>{toast(`${c}반 명렬표 ${list.length}명 저장`);$('rosterInfo').textContent=`${c}반 ${list.length}명`}});
+    saveClassRoster(c,list,`${c}반 명렬표 ${list.length}명 저장`);
     return;
   }
   if(b.id==='saveCfg'){

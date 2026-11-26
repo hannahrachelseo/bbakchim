@@ -1,6 +1,6 @@
 /* 한나T 빡침모드 ON — 자동 업데이트용 서비스 워커
    화면(index.html)은 항상 인터넷에서 먼저 받아오고, 인터넷이 없을 때만 저장해 둔 화면을 보여줘요. */
-const CACHE = 'bbak-v3';
+const CACHE = 'bbak-v4';
 const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
